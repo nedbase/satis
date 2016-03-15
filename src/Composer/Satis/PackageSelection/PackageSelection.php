@@ -16,10 +16,12 @@ use Composer\DependencyResolver\Pool;
 use Composer\Json\JsonFile;
 use Composer\Package\AliasPackage;
 use Composer\Package\BasePackage;
+use Composer\Package\CompletePackage;
 use Composer\Package\Link;
 use Composer\Package\LinkConstraint\MultiConstraint;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\PackageInterface;
+use Composer\Repository\ArtifactRepository;
 use Composer\Repository\ComposerRepository;
 use Composer\Repository\ConfigurableRepositoryInterface;
 use Composer\Repository\PlatformRepository;
@@ -351,6 +353,18 @@ class PackageSelection
                     // skip aliases
                     if ($package instanceof AliasPackage) {
                         continue;
+                    }
+
+                    if ($repo instanceof ArtifactRepository) {
+                        /** @var CompletePackage $package */
+                        $repoConfig =$repo->getRepoConfig();
+                        if (isset($repoConfig['url-prefix'])) {
+                            $url = $repoConfig['url-prefix'];
+                            if (!preg_match('/\/$/', $url)) {
+                                $url .= '/';
+                            }
+                            $package->setDistUrl($url . basename($package->getDistUrl()));
+                        }
                     }
 
                     if (BasePackage::$stabilities[$package->getStability()] > BasePackage::$stabilities[$minimumStability]) {
